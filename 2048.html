@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #faf8ef;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #776e65;
+            margin: 10px 0;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .scores {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .score-box {
+            background-color: #bbada0;
+            padding: 10px 20px;
+            border-radius: 6px;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        #board {
+            width: 400px;
+            height: 400px;
+            background-color: #bbada0;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 10px;
+            box-sizing: border-box;
+        }
+        .tile {
+            background-color: #cdc1b4;
+            border-radius: 6px;
+            font-size: 32px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #776e65;
+        }
+        .tile-2 { background-color: #eee4da; }
+        .tile-4 { background-color: #ede0c8; }
+        .tile-8 { background-color: #f2b179; color: #f9f6f2; }
+        .tile-16 { background-color: #f59563; color: #f9f6f2; }
+        .tile-32 { background-color: #f67c5f; color: #f9f6f2; }
+        .tile-64 { background-color: #f65e3b; color: #f9f6f2; }
+        .tile-128 { background-color: #edcf72; color: #f9f6f2; font-size: 28px; }
+        .tile-256 { background-color: #edcc61; color: #f9f6f2; font-size: 28px; }
+        .tile-512 { background-color: #edc850; color: #f9f6f2; font-size: 28px; }
+        .tile-1024 { background-color: #edc53f; color: #f9f6f2; font-size: 24px; }
+        .tile-2048 { background-color: #edc22e; color: #f9f6f2; font-size: 24px; }
+        
+        .game-over-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 48px;
+            font-weight: bold;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #8f7a66;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>2048</h1>
+        <div class="scores">
+            <div class="score-box">SCORE: <span id="score">0</span></div>
+            <div class="score-box">BEST: <span id="best-score">0</span></div>
+        </div>
+        <div id="board"></div>
+        <button onclick="restartGame()">New Game</button>
+    </div>
+
+    <div id="game-over" class="game-over-screen">
+        <div>Game Over!</div>
+        <button onclick="restartGame()">Try Again</button>
+    </div>
+
+    <script>
+        let board = [];
+        let score = 0;
+        let bestScore = localStorage.getItem("2048_best") || 0;
+        const size = 4;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            start();
+            document.addEventListener("keydown", handleKeyPress);
+        });
+
+        function start() {
+            score = 0;
+            document.getElementById("score").innerText = score;
+            document.getElementById("best-score").innerText = bestScore;
+            board = Array(size).fill().map(() => Array(size).fill(0));
+            addRandomTile();
+            addRandomTile();
+            updateBoard();
+            document.getElementById("game-over").style.display = "none";
+        }
+
+        function restartGame() {
+            start();
+        }
+
+        function addRandomTile() {
+            let emptyTiles = [];
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    if (board[r][c] === 0) emptyTiles.push({r, c});
+                }
+            }
+            if (!emptyTiles.length) return;
+            let randomTile = emptyTiles[Math.floor(Math.random() * emptyTiles.length)];
+            board[randomTile.r][randomTile.c] = Math.random() < 0.9 ? 2 : 4;
+        }
+
+        function updateBoard() {
+            const boardElement = document.getElementById("board");
+            boardElement.innerHTML = "";
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    let value = board[r][c];
+                    let tile = document.createElement("div");
+                    tile.className = `tile tile-${value}`;
+                    tile.innerText = value === 0 ? "" : value;
+                    boardElement.appendChild(tile);
+                }
+            }
+            document.getElementById("score").innerText = score;
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem("2048_best", bestScore);
+                document.getElementById("best-score").innerText = bestScore;
+            }
+        }
+
+        function handleKeyPress(e) {
+            let moved = false;
+            if (e.key === "ArrowUp") moved = moveUp();
+            else if (e.key === "ArrowDown") moved = moveDown();
+            else if (e.key === "ArrowLeft") moved = moveLeft();
+            else if (e.key === "ArrowRight") moved = moveRight();
+
+            if (moved) {
+                addRandomTile();
+                updateBoard();
+                if (checkGameOver()) {
+                    document.getElementById("game-over").style.display = "flex";
+                }
+            }
+        }
+
+        function slide(row) {
+            let arr = row.filter(val => val !== 0);
+            let missing = size - arr.length;
+            while (missing > 0) {
+                arr.push(0);
+                missing--;
+            }
+            return arr;
+        }
+
+        function combine(row) {
+            for (let i = 0; i < size - 1; i++) {
+                if (row[i] !== 0 && row[i] === row[i + 1]) {
+                    row[i] *= 2;
+                    score += row[i];
+                    row[i + 1] = 0;
+                }
+            }
+            return row;
+        }
+
+        function moveLeft() {
+            let original = JSON.stringify(board);
+            for (let r = 0; r < size; r++) {
+                board[r] = slide(board[r]);
+                board[r] = combine(board[r]);
+                board[r] = slide(board[r]);
+            }
+            return original !== JSON.stringify(board);
+        }
+
+        function moveRight() {
+            let original = JSON.stringify(board);
+            for (let r = 0; r < size; r++) {
+                board[r].reverse();
+                board[r] = slide(board[r]);
+                board[r].reverse();
+            }
+            return original !== JSON.stringify(board);
+        }
+
+        function moveUp() {
+            let original = JSON.stringify(board);
+            for (let c = 0; c < size; c++) {
+                let column = [board[0][c], board[1][c], board[2][c], board[3][c]];
+                column = slide(column);
+                column = combine(column);
+                column = slide(column);
+                for (let r = 0; r < size; r++) board[r][c] = column[r];
+            }
+            return original !== JSON.stringify(board);
+        }
+
+        function moveDown() {
+            let original = JSON.stringify(board);
+            for (let c = 0; c < size; c++) {
+                let column = [board[0][c], board[1][c], board[2][c], board[3][c]];
+                column.reverse();
+                column = slide(column);
+                column.reverse();
+                for (let r = 0; r < size; r++) board[r][c] = column[r];
+            }
+            return original !== JSON.stringify(board);
+        }
+
+        function checkGameOver() {
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    if (board[r][c] === 0) return false;
+                    if (c < size - 1 && board[r][c] === board[r][c + 1]) return false;
+                    if (r < size - 1 && board[r][c] === board[r + 1][c]) return false;
+                }
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>
