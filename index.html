@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sowzium 2048</title>
+    <title>Sowz33's 2048 Game</title>
     <style>
         body { font-family: sans-serif; background: #faf8ef; text-align: center; color: #776e65; }
         .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 280px; background: #bbada0; padding: 8px; border-radius: 6px; margin: 15px auto; }
@@ -14,7 +14,7 @@
     </style>
 </head>
 <body>
-    <h2>Sowz33's Upgrade 2048 Game</h2>
+    <h2>Sowz33's 2048: Upgrade Edition</h2>
     <div>SCORE: <strong id="sc">0</strong> | BEST: <strong id="hi">0</strong></div>
     
     <div class="grid" id="bd"></div>
@@ -30,7 +30,7 @@
 
     <script>
         let board = [], score = 0, hi = 0, lvSp = 1, lvCh = 1;
-        const prices = { sp:, ch: [200, 500, 1200, 3000] };
+        const prices = { sp:, ch: [200, 800, 2500, 10000] };
 
         const colors = {
             2: { text: "#776e65", bg: "#eee4da" }, 4: { text: "#776e65", bg: "#ede0c8" },
@@ -57,9 +57,9 @@
                 hi = parseInt(localStorage.getItem("s2048_hi")) || 0;
                 lvSp = parseInt(localStorage.getItem("s2048_lsp")) || 1;
                 lvCh = parseInt(localStorage.getItem("s2048_lch")) || 1;
-                board = JSON.parse(localStorage.getItem("s2048_bd"));
+                try { board = JSON.parse(localStorage.getItem("s2048_bd")); } catch(e) { board = []; }
             }
-            if (!board || !board.length) resetGrid(); else render();
+            if (!board || !board.length || board.length !== 4) resetGrid(); else render();
             document.addEventListener("keydown", e => handleMove(e.key));
         });
 
@@ -74,8 +74,8 @@
                 for (let c = 0; c < 4; c++) if (board[r][c] === 0) empty.push({r, c});
             if (!empty.length) return;
             let cell = empty[Math.floor(Math.random() * empty.length)];
-            let min = [2, 4, 8, 16][lvSp - 1];
-            let odds = [0.1, 0.25, 0.45, 0.7, 0.9][lvCh - 1];
+            let min = [2, 4, 8, 16, 32][lvSp - 1] || 2;
+            let odds = [0.1, 0.25, 0.45, 0.7, 0.9][lvCh - 1] || 0.1;
             board[cell.r][cell.c] = Math.random() < odds ? min * 2 : min;
         }
 
@@ -101,11 +101,11 @@
             document.getElementById("hi").innerText = hi;
 
             let costSp = prices.sp[lvSp - 1], costCh = prices.ch[lvCh - 1];
-            document.getElementById("lbl-sp").innerText = [2, 4, 8, 16][lvSp - 1];
+            document.getElementById("lbl-sp").innerText = [2, 4, 8, 16, 32][lvSp - 1] || 32;
             document.getElementById("btn-sp").innerText = costSp ? `Upgrade (Cost: ${costSp})` : "MAX";
             document.getElementById("btn-sp").disabled = !costSp || score < costSp;
 
-            document.getElementById("lbl-ch").innerText = ["10%", "25%", "45%", "70%", "90%"][lvCh - 1];
+            document.getElementById("lbl-ch").innerText = ["10%", "25%", "45%", "70%", "90%"][lvCh - 1] || "90%";
             document.getElementById("btn-ch").innerText = costCh ? `Upgrade (Cost: ${costCh})` : "MAX";
             document.getElementById("btn-ch").disabled = !costCh || score < costCh;
 
@@ -116,9 +116,11 @@
 
         function buy(type) {
             let cost = type === "sp" ? prices.sp[lvSp - 1] : prices.ch[lvCh - 1];
-            score -= cost;
-            if (type === "sp") lvSp++; else lvCh++;
-            render();
+            if (score >= cost) {
+                score -= cost;
+                if (type === "sp") lvSp++; else lvCh++;
+                render();
+            }
         }
 
         function slide(row) {
@@ -154,4 +156,3 @@
     </script>
 </body>
 </html>
-
